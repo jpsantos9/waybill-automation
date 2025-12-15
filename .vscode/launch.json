@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-LazadaAutoApplication<lazada-auto>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.lazadaauto.LazadaAutoApplication",
+            "projectName": "lazada-auto",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}

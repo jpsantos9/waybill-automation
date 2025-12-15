@@ -1,0 +1,10 @@
+- [x] Clarify Project Requirements
+  - Spring Boot project with Selenium integration
+  - REST controller to execute login to Lazada Seller Center
+- [ ] Scaffold the Project
+- [ ] Customize the Project
+- [ ] Install Required Extensions
+- [ ] Compile the Project
+- [ ] Create and Run Task
+- [ ] Launch the Project
+- [ ] Ensure Documentation is Complete
