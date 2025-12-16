@@ -29,6 +29,13 @@ public class WebDriverFactory {
             options.addArguments("--disable-gpu");
         }
 
+        // Container-friendly flags
+        options.addArguments("--no-sandbox");
+        options.addArguments("--disable-dev-shm-usage");
+        options.addArguments("--disable-extensions");
+        options.addArguments("--disable-gpu");
+        options.addArguments("--remote-allow-origins=*" );
+
         Map<String, Object> prefs = new HashMap<>();
         prefs.put("download.default_directory", downloadDir);
         prefs.put("download.prompt_for_download", false);

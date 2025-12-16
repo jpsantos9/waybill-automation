@@ -61,7 +61,12 @@ RUN wget -O /tmp/chrome.deb https://dl.google.com/linux/direct/google-chrome-sta
 
 # Create non-root user
 RUN addgroup --system appgroup \
- && adduser --system --ingroup appgroup appuser
+ && adduser --system --ingroup appgroup --home /home/appuser appuser || true
+
+# Ensure HOME and selenium cache exist and are writable
+RUN mkdir -p /home/appuser/.cache/selenium \
+ && chown -R appuser:appgroup /home/appuser \
+ && chmod -R 750 /home/appuser
 
 # Copy the built Spring Boot executable JAR
 COPY --from=builder /workspace/target/*.jar app.jar
