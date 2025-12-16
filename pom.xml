@@ -10,7 +10,7 @@
     <name>lazada-auto</name>
     <description>Spring Boot Selenium Lazada Seller Center Login</description>
     <properties>
-        <java.version>18</java.version>
+        <java.version>17</java.version>
         <spring-boot.version>3.2.0</spring-boot.version>
     </properties>
     <dependencies>
@@ -42,10 +42,28 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
+                <configuration>
+                    <release>${java.version}</release>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                    <version>3.2.0</version>
-                </plugin>
+                <version>3.2.0</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <mainClass>com.lazadaauto.LazadaAutoApplication</mainClass>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 </project>

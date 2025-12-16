@@ -47,7 +47,7 @@ public class WaybillController {
             }
 
             // generate and download waybill
-            java.io.File awbFile = waybillService.generateWaybillAndDownload(driver, url);
+            waybillService.generateWaybillAndDownload(driver, url);
 
             // Merge downloaded PDFs
             ResponseEntity<?> mergeResponse = pdfMergeController.mergePdfs();

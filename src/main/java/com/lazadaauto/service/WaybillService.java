@@ -1,6 +1,5 @@
 package com.lazadaauto.service;
 
-import java.io.File;
 import java.time.Duration;
 import java.util.List;
 
@@ -14,7 +13,9 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class WaybillService {
-    public File generateWaybillAndDownload(WebDriver driver, String url) throws Exception {
+    public void generateWaybillAndDownload(WebDriver driver, String url) throws Exception {
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+
         driver.get(url);
         Thread.sleep(2000); // Wait for page to load
 
@@ -22,8 +23,9 @@ public class WaybillService {
         closeAllPopups(driver);
 
         // Click the checkbox for the order
-        WebElement checkbox = driver.findElement(By.cssSelector("input.next-checkbox-input"));
-        checkbox.click();
+        WebElement parent = wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("div.next-affix-top")));
+        WebElement label = parent.findElement(By.cssSelector("div.list-check-cell label.next-checkbox-wrapper"));
+        label.click();
         Thread.sleep(1000);
 
         // Click the Print AWB button
@@ -43,7 +45,6 @@ public class WaybillService {
             // allow the print page to load
             Thread.sleep(2000);
             // Try to open the direct PDF link via anchor, otherwise click button (including inside iframes)
-            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
             try {
                 // First, check for print iframe(s) that directly embed the AWB PDF (example HTML shows an <iframe src="...logistics-waybill-oss-...">)
                 List<WebElement> frames = driver.findElements(By.tagName("iframe"));
@@ -125,23 +126,7 @@ public class WaybillService {
             // fallback: small wait to allow download to start
             Thread.sleep(5000);
         }
-
-        // Get the default download directory
-        String downloadDir = System.getProperty("user.home") + "/Downloads";
-        File dir = new File(downloadDir);
-        File[] files = dir.listFiles();
-        if (files != null) {
-            File latestFile = null;
-            long lastModified = Long.MIN_VALUE;
-            for (File file : files) {
-                if (file.isFile() && file.lastModified() > lastModified) {
-                    lastModified = file.lastModified();
-                    latestFile = file;
-                }
-            }
-            return latestFile;
-        }
-        return null;
+        Thread.sleep(2000); // Wait for file to download
     }
 
     private void closeAllPopups(WebDriver driver) {
