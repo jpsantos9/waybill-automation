@@ -8,6 +8,7 @@ import java.util.Comparator;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -25,14 +26,17 @@ public class PdfMergeController {
 
     @Autowired
     private PdfMergeService pdfMergeService;
+    
+    @Value("${app.chrome.download-dir:C:\\Downloads}")
+    private String downloadDir;
 
     @PostMapping(path = "/merge-pdfs", produces = "application/pdf")
     public ResponseEntity<?> mergePdfs() {
         try {
             List<File> files = new ArrayList<>();
-            File downloads = new File("C:\\Downloads");
+            File downloads = new File(downloadDir);
             if (!downloads.exists() || !downloads.isDirectory()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Downloads folder not found: C:\\Downloads");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Downloads folder not found: " + downloadDir);
             }
 
             File[] list = downloads.listFiles((d, name) -> name.toLowerCase().endsWith(".pdf"));
@@ -58,7 +62,7 @@ public class PdfMergeController {
 
             return new ResponseEntity<>(data, headers, HttpStatus.OK);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error merging PDFs: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         }
     }
 

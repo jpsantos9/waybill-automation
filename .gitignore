@@ -1,0 +1,45 @@
+# Maven / Java
+target/
+.classpath
+.project
+.settings/
+/.idea/
+*.iml
+*.log
+*.class
+.DS_Store
+
+# IntelliJ
+out/
+.idea/
+
+# VS Code
+.vscode/
+
+# Eclipse
+.metadata/
+bin/
+
+# Spring Boot devtools
+spring-boot-devtools.properties
+
+# OS files
+Thumbs.db
+ehthumbs.db
+
+# Build artifacts
+/build/
+
+# Runtime files
+*.pid
+*.seed
+
+# Local environment
+.env
+
+# Logs
+logs/
+*.log
+
+# Downloads (optional) - uncomment if you don't want to include generated PDFs
+# C:\Downloads/**

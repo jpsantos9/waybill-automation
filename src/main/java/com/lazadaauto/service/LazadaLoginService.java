@@ -25,7 +25,7 @@ public class LazadaLoginService {
         usernameField.sendKeys(username);
         passwordField.sendKeys(password);
         loginButton.click();
-        Thread.sleep(3000); // Wait for login to process
+        Thread.sleep(30000); // Wait for login to process
 
         return true;
     }

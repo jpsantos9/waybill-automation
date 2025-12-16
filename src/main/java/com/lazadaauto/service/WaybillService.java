@@ -14,8 +14,8 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class WaybillService {
-    public File generateWaybillAndDownload(WebDriver driver) throws Exception {
-        driver.get("https://sellercenter.lazada.com.ph/apps/order/list?oldVersion=1&spm=a1zawj.portal_home.navi_left_sidebar.droot_normal_rp_asc_v2_ordersreviews_rp_asc_v2_ordersnewui.15bc1e13ZFZh2D&status=toshiphandover");
+    public File generateWaybillAndDownload(WebDriver driver, String url) throws Exception {
+        driver.get(url);
         Thread.sleep(2000); // Wait for page to load
 
         // Close any popups/dialogs if present

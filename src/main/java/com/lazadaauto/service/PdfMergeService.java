@@ -13,10 +13,14 @@ import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.graphics.image.LosslessFactory;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 import org.apache.pdfbox.rendering.PDFRenderer;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
 public class PdfMergeService {
+
+    @Value("${app.chrome.download-dir:C:\\Downloads}")
+    private String downloadDir;
 
     /**
      * Render up to 4 single-page PDFs into a single PDF page (2x2 layout) and save to C:\\Downloads
@@ -26,7 +30,7 @@ public class PdfMergeService {
     public File compileFourToOne(List<File> inputPdfs) throws IOException {
         if (inputPdfs == null || inputPdfs.isEmpty()) return null;
 
-        String outDir = "C:\\Downloads";
+        String outDir = downloadDir;
         File dir = new File(outDir);
         if (!dir.exists()) dir.mkdirs();
 
@@ -116,7 +120,7 @@ public class PdfMergeService {
      * Delete all files (non-recursive) inside C:\\Downloads. Returns number of files deleted.
      */
     public int clearDownloads() {
-        String outDir = "C:\\Downloads";
+        String outDir = downloadDir;
         File dir = new File(outDir);
         if (!dir.exists() || !dir.isDirectory()) return 0;
 

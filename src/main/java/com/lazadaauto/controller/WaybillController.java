@@ -1,14 +1,8 @@
 package com.lazadaauto.controller;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import org.openqa.selenium.UnexpectedAlertBehaviour;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.lazadaauto.service.LazadaLoginService;
 import com.lazadaauto.service.WaybillService;
+import com.lazadaauto.util.WebDriverFactory;
 
 @RestController
 @RequestMapping("/api")
@@ -30,38 +25,37 @@ public class WaybillController {
     @Autowired
     private PdfMergeController pdfMergeController;
 
-    @Value("${app.chrome.headless:true}")
-    private boolean headless;
+    @Autowired
+    private WebDriverFactory webDriverFactory;
 
-    @GetMapping("/generate-waybill")
-    public ResponseEntity<?> generateWaybill() {
-        ChromeOptions options = new ChromeOptions();
-        options.setUnhandledPromptBehaviour(UnexpectedAlertBehaviour.DISMISS_AND_NOTIFY);
-        options.addArguments("--start-maximized");
-        // run Chrome in headless mode when enabled by configuration
-        if (headless) {
-            options.addArguments("--headless=new");
-            options.addArguments("--window-size=1920,1080");
-            options.addArguments("--disable-gpu");
-        }
-        // set download directory
-        Map<String, Object> prefs = new HashMap<>();
-        prefs.put("download.default_directory", "C:\\Downloads");
-        prefs.put("download.prompt_for_download", false);
-        prefs.put("plugins.always_open_pdf_externally", true);
-        options.setExperimentalOption("prefs", prefs);
-        WebDriver driver = new ChromeDriver(options);
+    @GetMapping("/lazada/generate-handover-waybill")
+    public ResponseEntity<?> generateHandoverWaybill() {
+        return generateWaybill("https://sellercenter.lazada.com.ph/apps/order/list?oldVersion=1&spm=a1zawj.portal_home.navi_left_sidebar.droot_normal_rp_asc_v2_ordersreviews_rp_asc_v2_ordersnewui.15bc1e13ZFZh2D&status=toshiphandover");
+    }
+
+    @GetMapping("/lazada/generate-toship-waybill")
+    public ResponseEntity<?> generateToshipWaybill() {
+        return generateWaybill("https://sellercenter.lazada.com.ph/apps/order/list?oldVersion=1&spm=a1zawj.portal_home.navi_left_sidebar.droot_normal_rp_asc_v2_ordersreviews_rp_asc_v2_ordersnewui.15bc1e13OwhbvT&status=toshiparrangeshipment");
+    }
+
+    public ResponseEntity<?> generateWaybill(String url) {
+        WebDriver driver = webDriverFactory.createDriver();
         try {
             boolean loggedIn = loginService.login(driver);
             if (!loggedIn) {
                 return ResponseEntity.status(401).build();
             }
-            java.io.File awbFile = waybillService.generateWaybillAndDownload(driver);
 
-            return pdfMergeController.mergePdfs();
+            // generate and download waybill
+            java.io.File awbFile = waybillService.generateWaybillAndDownload(driver, url);
+
+            // Merge downloaded PDFs
+            ResponseEntity<?> mergeResponse = pdfMergeController.mergePdfs();
+            pdfMergeController.clearDownloads();
+            return mergeResponse;
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.status(500).build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         } finally {
             driver.quit();
         }
