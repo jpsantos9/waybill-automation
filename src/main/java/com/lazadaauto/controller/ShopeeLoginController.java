@@ -5,6 +5,7 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,6 +19,9 @@ public class ShopeeLoginController {
 
     @Autowired
     private ShopeeLoginService shopeeLoginService;
+
+    @Value("${app.chrome.auto-close:true}")
+    private boolean autoClose;
 
     @GetMapping("/login-shopee")
     public ResponseEntity<String> loginShopee() {
@@ -33,7 +37,7 @@ public class ShopeeLoginController {
             e.printStackTrace();
             return ResponseEntity.status(500).body("Error: " + e.getMessage());
         } finally {
-            // try { driver.quit(); } catch (Exception ignored) {}
+            if (autoClose) driver.quit();
         }
     }
 }

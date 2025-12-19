@@ -4,7 +4,10 @@ import java.time.Duration;
 import java.util.List;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.ElementClickInterceptedException;
 import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.StaleElementReferenceException;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -17,36 +20,40 @@ public class WaybillService {
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
 
         driver.get(url);
-        Thread.sleep(2000); // Wait for page to load
+        wait.until(ExpectedConditions.visibilityOfElementLocated(
+            By.xpath("//span[normalize-space()='Print AWB']")
+        ));
 
         // Close any popups/dialogs if present
         closeAllPopups(driver);
 
         // Click the checkbox for the order
+        System.out.println("[Info] Selecting the order checkbox...");
         WebElement parent = wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("div.next-affix-top")));
         WebElement label = parent.findElement(By.cssSelector("div.list-check-cell label.next-checkbox-wrapper"));
         label.click();
         Thread.sleep(1000);
 
         // Click the Print AWB button
-        WebElement printAwbBtn = driver.findElement(By.xpath("//span[contains(text(),'Print AWB')]") );
+        System.out.println("[Info] Clicking Print AWB button...");
+        WebElement printAwbBtn = driver.findElement(By.xpath("//span[contains(text(),'Print AWB')]"));
         printAwbBtn.click();
 
         // Wait for a new tab/window to open and switch to the print page
+        System.out.println("[Info] Waiting to switch to print tab...");
         boolean switched = switchToTabByUrlContains(driver, "/apps/order/print", 10000);
-        System.out.println("Switched to print tab: " + switched);
+
         // Print the title of the currently selected tab
-        try {
-            System.out.println("Selected tab title: " + driver.getTitle());
-        } catch (Exception ex) {
-            System.out.println("Unable to get tab title: " + ex.getMessage());
-        }
+        System.out.println("[Info] Selected tab title: " + driver.getTitle());
         if (switched) {
             // allow the print page to load
-            Thread.sleep(2000);
+            wait.until(ExpectedConditions.presenceOfElementLocated(
+                By.tagName("iframe")
+            ));
             // Try to open the direct PDF link via anchor, otherwise click button (including inside iframes)
             try {
                 // First, check for print iframe(s) that directly embed the AWB PDF (example HTML shows an <iframe src="...logistics-waybill-oss-...">)
+                System.out.println("[Info] Looking for AWB iframe or link...");
                 List<WebElement> frames = driver.findElements(By.tagName("iframe"));
                 String pdfSrc = null;
                 for (WebElement f : frames) {
@@ -59,7 +66,7 @@ public class WaybillService {
                     } catch (Exception ignore) {}
                 }
                 if (pdfSrc != null) {
-                    System.out.println("Found AWB iframe src: " + pdfSrc);
+                    System.out.println("[Info] Found AWB iframe src: " + pdfSrc);
                     try {
                         ((JavascriptExecutor) driver).executeScript("window.open(arguments[0], '_blank');", pdfSrc);
                         long s = System.currentTimeMillis();
@@ -71,76 +78,66 @@ public class WaybillService {
                         driver.get(pdfSrc);
                         Thread.sleep(2000);
                     }
-                } else {
-                    // If no iframe PDF found, try anchor first (old logic)
-                    WebElement anchor = wait.until(ExpectedConditions.presenceOfElementLocated(
-                            By.cssSelector("a[href*='logistics-waybill-oss-sg'], a[href*='logistics-waybill']")));
-                    String href = anchor.getAttribute("href");
-                    System.out.println("Found AWB download link: " + href);
-                    if (href != null && !href.isEmpty()) {
-                        try {
-                            ((JavascriptExecutor) driver).executeScript("window.open(arguments[0], '_blank');", href);
-                            long s = System.currentTimeMillis();
-                            while (System.currentTimeMillis() - s < 5000 && driver.getWindowHandles().size() <= 1) {
-                                Thread.sleep(200);
-                            }
-                        } catch (Exception jsEx) {
-                            anchor.click();
-                            long s = System.currentTimeMillis();
-                            while (System.currentTimeMillis() - s < 5000 && driver.getWindowHandles().size() <= 1) {
-                                Thread.sleep(200);
-                            }
-                        }
-                    } else {
-                        throw new Exception("anchor href empty");
-                    }
                 }
             } catch (Exception e) {
-                try {
-                    WebElement openBtn = new WebDriverWait(driver, Duration.ofSeconds(5))
-                            .until(ExpectedConditions.elementToBeClickable(By.id("open-button")));
-                    openBtn.click();
-                } catch (Exception e2) {
-                    // attempt inside iframes
-                    List<WebElement> iframes = driver.findElements(By.tagName("iframe"));
-                    boolean clicked = false;
-                    for (WebElement frame : iframes) {
-                        try {
-                            driver.switchTo().frame(frame);
-                            WebElement openBtnInFrame = new WebDriverWait(driver, Duration.ofSeconds(3))
-                                    .until(ExpectedConditions.elementToBeClickable(By.id("open-button")));
-                            openBtnInFrame.click();
-                            clicked = true;
-                            driver.switchTo().defaultContent();
-                            break;
-                        } catch (Exception ignore) {
-                            try { driver.switchTo().defaultContent(); } catch (Exception ex) {}
-                        }
-                    }
-                    if (!clicked) {
-                        throw new RuntimeException("Could not find AWB open link or button on print page.");
-                    }
-                }
+                System.out.println("[Error] No direct AWB iframe/link found, trying Print button...");
+                e.printStackTrace();
             }
         } else {
-            // fallback: small wait to allow download to start
-            Thread.sleep(5000);
+            System.out.println("[Error] Failed to switch to print tab.");
         }
         Thread.sleep(2000); // Wait for file to download
     }
 
     private void closeAllPopups(WebDriver driver) {
-        List<WebElement> closeBtns = driver.findElements(By.cssSelector("a.asc-tour-helper-close"));
-        System.out.println("Found " + closeBtns.size() + " close buttons.");
-        for (WebElement btn : closeBtns) {
+        By closeBtnLocator = By.cssSelector("a.asc-tour-helper-close");
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(5));
+
+        boolean popupsRemaining = true;
+
+        while (popupsRemaining) {
             try {
-                btn.click();
-                Thread.sleep(500);
-            } catch (Exception ignore) {
-                // If not clickable, continue
+                // Wait until at least one close button is present
+                wait.until(ExpectedConditions.presenceOfElementLocated(closeBtnLocator));
+
+                // Get all currently visible close buttons
+                List<WebElement> closeBtns = driver.findElements(closeBtnLocator);
+
+                if (closeBtns.isEmpty()) {
+                    popupsRemaining = false;
+                    break;
+                }
+
+                for (WebElement btn : closeBtns) {
+                    int attempts = 0;
+                    boolean clicked = false;
+
+                    while (attempts < 3 && !clicked) {
+                        try {
+                            btn.click();
+                            Thread.sleep(300); // small pause between clicks
+                            clicked = true;
+                        } catch (StaleElementReferenceException | ElementClickInterceptedException | InterruptedException e) {
+                            System.out.println("[Error] Retrying click for a close button");
+                            attempts++;
+                            // Re-find the button for next attempt
+                            List<WebElement> refreshedBtns = driver.findElements(closeBtnLocator);
+                            if (!refreshedBtns.isEmpty()) {
+                                btn = refreshedBtns.get(0); // pick first available
+                            }
+                        }
+                    }
+                }
+
+            } catch (TimeoutException e) {
+                // No more popups found
+                popupsRemaining = false;
             }
         }
+
+        System.out.println("[Info] All popups closed.");
     }
+
 
     private boolean switchToTabByUrlContains(WebDriver driver, String urlContains, int timeoutMillis) {
         long start = System.currentTimeMillis();
@@ -155,13 +152,16 @@ public class WaybillService {
                             if (current != null && current.contains(urlContains)) {
                                 return true;
                             }
-                        } catch (Exception ignored) {
-                            // continue trying other handles
+                        } catch (Exception e) {
+                            System.out.println("[Error] Error switching to window handle: " + handle);
+                            e.printStackTrace();
                         }
                     }
                 }
-            } catch (Exception ignored) {}
-            try { Thread.sleep(250); } catch (InterruptedException ignored) {}
+            } catch (Exception e) {
+                System.out.println("[Error] Error getting window handles.");
+                e.printStackTrace();
+            }
         }
         return false;
     }

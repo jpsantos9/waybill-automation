@@ -34,9 +34,10 @@ public class PdfMergeController {
     public ResponseEntity<?> mergePdfs() {
         try {
             List<File> files = new ArrayList<>();
-            File downloads = new File(downloadDir);
+            String downloadPath = System.getProperty("user.dir") + File.separator + downloadDir;
+            File downloads = new File(downloadPath);
             if (!downloads.exists() || !downloads.isDirectory()) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Downloads folder not found: " + downloadDir);
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Downloads folder not found: " + downloadPath);
             }
 
             File[] list = downloads.listFiles((d, name) -> name.toLowerCase().endsWith(".pdf"));

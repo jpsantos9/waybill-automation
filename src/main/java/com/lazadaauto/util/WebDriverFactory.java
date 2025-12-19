@@ -1,5 +1,6 @@
 package com.lazadaauto.util;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -36,8 +37,10 @@ public class WebDriverFactory {
         options.addArguments("--disable-gpu");
         options.addArguments("--remote-allow-origins=*" );
 
+        String downloadPath = System.getProperty("user.dir") + File.separator + downloadDir;
+        System.out.println("Download path: " + downloadPath);
         Map<String, Object> prefs = new HashMap<>();
-        prefs.put("download.default_directory", downloadDir);
+        prefs.put("download.default_directory", downloadPath);
         prefs.put("download.prompt_for_download", false);
         prefs.put("plugins.always_open_pdf_externally", true);
         options.setExperimentalOption("prefs", prefs);

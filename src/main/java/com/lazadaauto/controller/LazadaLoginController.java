@@ -3,6 +3,7 @@ package com.lazadaauto.controller;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,6 +18,9 @@ public class LazadaLoginController {
     @Autowired
     private LazadaLoginService loginService;
 
+    @Value("${app.chrome.auto-close:true}")
+    private boolean autoClose;
+
     @PostMapping("/login")
         public ResponseEntity<String> login() {
             WebDriver driver = new ChromeDriver();
@@ -30,7 +34,7 @@ public class LazadaLoginController {
             } catch (Exception ex) {
                 return ResponseEntity.status(500).body("Error: " + ex.getMessage());
             } finally {
-                driver.quit();
+                if (autoClose) driver.quit();
             }
         }
 }

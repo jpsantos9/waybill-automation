@@ -2,6 +2,7 @@ package com.lazadaauto.controller;
 
 import org.openqa.selenium.WebDriver;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,6 +29,9 @@ public class WaybillController {
     @Autowired
     private WebDriverFactory webDriverFactory;
 
+    @Value("${app.chrome.auto-close:true}")
+    private boolean autoClose;
+
     @GetMapping("/lazada/generate-handover-waybill")
     public ResponseEntity<?> generateHandoverWaybill() {
         return generateWaybill("https://sellercenter.lazada.com.ph/apps/order/list?oldVersion=1&spm=a1zawj.portal_home.navi_left_sidebar.droot_normal_rp_asc_v2_ordersreviews_rp_asc_v2_ordersnewui.15bc1e13ZFZh2D&status=toshiphandover");
@@ -43,21 +47,23 @@ public class WaybillController {
         try {
             boolean loggedIn = loginService.login(driver);
             if (!loggedIn) {
-                return ResponseEntity.status(401).build();
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Lazada login failed");
             }
 
             // generate and download waybill
             waybillService.generateWaybillAndDownload(driver, url);
 
             // Merge downloaded PDFs
-            ResponseEntity<?> mergeResponse = pdfMergeController.mergePdfs();
+            ResponseEntity<?> mergePdfResponse = pdfMergeController.mergePdfs();
+
+            // Clear downloads after merging
             pdfMergeController.clearDownloads();
-            return mergeResponse;
+            return mergePdfResponse;
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
         } finally {
-            driver.quit();
+            if (autoClose) driver.quit();
         }
     }
 }
