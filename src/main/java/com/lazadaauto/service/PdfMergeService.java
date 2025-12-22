@@ -30,7 +30,7 @@ public class PdfMergeService {
     public File compileFourToOne(List<File> inputPdfs) throws IOException {
         if (inputPdfs == null || inputPdfs.isEmpty()) return null;
 
-        String outDir = downloadDir;
+        String outDir = getDownloadPath();
         File dir = new File(outDir);
         if (!dir.exists()) dir.mkdirs();
 
@@ -120,7 +120,7 @@ public class PdfMergeService {
      * Delete all files (non-recursive) inside C:\\Downloads. Returns number of files deleted.
      */
     public int clearDownloads() {
-        String outDir = downloadDir;
+        String outDir = getDownloadPath();
         File dir = new File(outDir);
         if (!dir.exists() || !dir.isDirectory()) return 0;
 
@@ -137,5 +137,9 @@ public class PdfMergeService {
             }
         }
         return deleted;
+    }
+
+    private String getDownloadPath() {
+        return System.getProperty("user.dir") + File.separator + downloadDir;
     }
 }
